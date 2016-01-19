@@ -1,0 +1,2 @@
+For auto updates on change:
+while inotifywait -e close_write drawClient.js ; do google-chrome-stable --load-and-launch-app="/home/justin/Repos/daq-client/"; done
