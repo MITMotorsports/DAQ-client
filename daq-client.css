@@ -1,0 +1,39 @@
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Source Code Pro'), url('./fonts/Source Code Pro.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Source Code Pro';
+}
+
+.top-div {
+    width: 100%;
+}
+.table-div {
+    height: 100%;
+    float: left;
+}
+
+.plot-div {
+    overflow: hidden;
+    height: 100%;
+}
+
+.axis path,
+.axis line {
+    shape-rendering: crispEdges;
+    stroke: black;
+    fill: none;
+    stroke-width: 1px;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1px;
+}

@@ -1,12 +1,16 @@
 {
-  "name": "daq-client",
-  "description": "The client application for managing MIT's DAQ",
-  "version": "0.0.1",
-  "manifest_version": 2,
-  "app": {
-    "background": {
-      "scripts": ["background.js"]
-    }
-  },
-  "icons": { "16": "daq-16.png", "128": "daq-128.png" }
+    "name": "daq-client",
+    "description": "The client application for managing MIT's DAQ",
+    "version": "0.0.1",
+    "manifest_version": 2,
+    "app": {
+	"background": {
+	    "scripts": ["background.js"]
+	}
+    },
+    "permissions": [
+	"storage",
+	"unlimitedStorage"
+    ],
+    "icons": { "16": "daq-16.png", "128": "daq-128.png" }
 }
