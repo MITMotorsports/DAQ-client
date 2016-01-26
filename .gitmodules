@@ -1,0 +1,3 @@
+[submodule "css-element-queries"]
+	path = css-element-queries
+	url = https://github.com/marcj/css-element-queries.git
