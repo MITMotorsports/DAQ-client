@@ -1,6 +1,5 @@
-var data = {
-    'tem' : {
-	'key'   : 'tem',
+var data = [
+	{'key'   : 'tem',
 	'name'  : 'Temperature',
 	'units' : 'F',
 	'values': [
@@ -18,7 +17,7 @@ var data = {
 	    {'time': 9000, 'value': 123}
 	]
     },
-    'thr' : {
+    {
 	'key'   : 'thr',
 	'name'  : 'Throttle',
 	'units' : '%',
@@ -37,12 +36,12 @@ var data = {
 	    {'time': 9000, 'value': 123}
 	]
     },
-    'brk' : {
+    {
 	'key'   : 'brk' ,
 	'name'  : 'Brake',
 	'units' : '%',
 	'values': [
-	    {'time':    1, 'value': 123},
+		{'time':    1, 'value': 123},
 	    {'time':   12, 'value': 000},
 	    {'time':  100, 'value': 123},
 	    {'time': 1000, 'value': 123},
@@ -56,7 +55,7 @@ var data = {
 	    {'time': 9000, 'value': 123}
 	]
     }
-};
+];
 
 var listOfRandomMeasurements = ['thr', 'brk', 'tem'];
 var makeRandom = function(){
@@ -87,7 +86,7 @@ function init(){
 function record(key, value, time){
     if (data.hasOwnProperty(key)){
 	data[key].values.push({'time': time, 'value': value});
-	updateTable(key);
+	updateTable();
 	updatePlots();
     } else {
 	console.log('unknown key: ', key);
@@ -97,8 +96,44 @@ function record(key, value, time){
 }
 
 var isRealTime;
-function updateTable(key){
-    // Update the table values
+function updateTable(time){
+	//reset table data
+	var tableData = []
+    for (i=0; i<data.length; i++) {
+    	var vals = data[i].values;
+    	//set undefined time to last time
+    	if (time === undefined) {
+    		time = vals[vals.length-1].time;
+    	}
+    	//get value at time
+    	for (j=0; j<vals.length; j++) {
+    		if (vals[i].time = time) {
+    			var displayval = vals[i];
+    		}
+    	}
+    	tableData.push([data[i].name, displayval.value, data[i].units]);
+    }
+    createTable(tableData);
+}
+
+function createTable(tableData) {
+  var table = document.createElement('table')
+    , tableBody = document.createElement('tbody');
+
+  tableData.forEach(function(rowData) {
+    var row = document.createElement('tr');
+
+    rowData.forEach(function(cellData) {
+      var cell = document.createElement('td');
+      cell.appendChild(document.createTextNode(cellData));
+      row.appendChild(cell);
+    });
+
+    tableBody.appendChild(row);
+  });
+
+  table.appendChild(tableBody);
+  document.getElementById("table-div").appendChild(table);
 }
 
 function updatePlots(){
