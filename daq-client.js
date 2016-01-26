@@ -97,15 +97,28 @@ function updateTable(time){
     	var vals = data[i].values;
     	//set undefined time to last time
     	if (time === undefined) {
-    		time = vals[vals.length-1].time;
-    	}
-    	//get value at time
-    	for (j=0; j<vals.length; j++) {
-    		if (vals[i].time = time) {
-    			var displayval = vals[i];
+    		if (vals.length===0) {
+    			var displayval = "---";
+    		}
+    		else {
+    			var displayval = vals[vals.length-1].value;
     		}
     	}
-    	tableData.push([data[i].name, displayval.value, data[i].units]);
+    	//get value at time
+    	else {
+    		var mindiff = 1000000000;
+    		for (j=0; j<vals.length; j++) {
+    			var diff = vals[j].time-time;
+    			console.log(diff)
+    			if (Math.abs(diff) < mindiff) {
+    				mindiff = Math.abs(diff);
+    				var closest = j;
+    				console.log(closest)
+    			}
+    		}
+    		var displayval = vals[j].value;
+    	}
+    	tableData.push([data[i].name, displayval, data[i].units]);
     }
     createTable(tableData);
 }
@@ -127,7 +140,8 @@ function createTable(tableData) {
   });
 
   table.appendChild(tableBody);
-  document.getElementById("table-div").appendChild(table);
+  table.id = 'table';
+  document.getElementById("table-div").replaceChild(table,document.getElementById("table"));
 }
 
 var isRealTime = false;
