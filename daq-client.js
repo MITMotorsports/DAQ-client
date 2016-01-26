@@ -1,20 +1,9 @@
 var data = [
-	{'key'   : 'tem',
+    {
+	'key'   : 'tem',
 	'name'  : 'Temperature',
 	'units' : 'F',
 	'values': [
-	    {'time':    1, 'value': 123},
-	    {'time':   12, 'value': 000},
-	    {'time':  100, 'value': 123},
-	    {'time': 1000, 'value': 123},
-	    {'time': 2000, 'value': 876},
-	    {'time': 3000, 'value': 999},
-	    {'time': 4000, 'value': 765},
-	    {'time': 5000, 'value': 234},
-	    {'time': 6000, 'value': 678},
-	    {'time': 7000, 'value': 345},
-	    {'time': 8000, 'value': 079},
-	    {'time': 9000, 'value': 123}
 	]
     },
     {
@@ -59,18 +48,33 @@ var data = [
 
 var listOfRandomMeasurements = ['thr', 'brk', 'tem'];
 var makeRandom = function(){
+    if (!isRealTime) {goRealTime();}
     if (listOfRandomMeasurements.length > 0){
 	var mykey = listOfRandomMeasurements.pop();
 	var start = Date.now();
-	var myval = 1;
 	setInterval(function(){
 	    record(mykey,
-		   myval++,
+		   Math.random() * 1000,
 		   Date.now() - start);
-	}, 1000);
+	}, 500);
+	createPlot(mykey);
     } else {
 	console.log('too many random measurements');
     }
+}
+
+var realTimeStartTime;
+function goRealTime(){
+    realTimeStartTime = Date.now();
+    isRealTime = true;
+    setInterval(function(){
+	updateTable();
+	updatePlots();
+    }, realTimeUpdateFrequency);
+}
+
+function isScrolling(){
+    return (isRealTime && (parseInt(document.getElementById('end').value) == 0));
 }
 
 var svg, table, rows, width, height;
@@ -78,24 +82,14 @@ function init(){
     var width = document.getElementById("plot-div").offsetWidth;
     xScale = d3.scale.linear()
 	.range([padding.left, width - padding.right])
-	.domain([xMin, xMax])
-	.nice()
-    createPlot('tem');
+	.domain([xMin, xMax]);
+//    createPlot('tem');
 }
 
 function record(key, value, time){
-    if (data.hasOwnProperty(key)){
-	data[key].values.push({'time': time, 'value': value});
-	updateTable();
-	updatePlots();
-    } else {
-	console.log('unknown key: ', key);
-	// Find a way to save these values somewhere so we don't lose
-	// any information
-    }
+    getDataSet(key).values.push({'time': time, 'value': value});
 }
 
-var isRealTime;
 function updateTable(time){
 	//reset table data
 	var tableData = []
@@ -136,64 +130,71 @@ function createTable(tableData) {
   document.getElementById("table-div").appendChild(table);
 }
 
+var isRealTime = false;
+var xScale, xMin = 0, xMax = Math.pow(2, 32), realTimeOffset = 500, realTimeUpdateFrequency = 500, transitionDuration = 250;
 function updatePlots(){
-    updateXScale();
-    for (var i = 0; i < plots.length; i++){
-	// Update the plot
-	var svg = plots[i].plot;
-	var myData = plots[i].values.filter(function(d) {return (d.time >= xMin && d.time <= xMax);});
-	plots[i].yScale.domain(d3.extent(myData, function(d) { return d.value; }));
-	svg.select('.line') .attr('d', plots[i].line(myData));
-	svg.select('.xaxis').call(plots[i].xAxis);
-	svg.select('.yaxis').call(plots[i].yAxis);
-    }
-}
-
-var xScale, xMin = 0, xMax = Math.pow(2, 32)/1000;
-function updateXScale(){
     xMin = parseInt(document.getElementById('start').value);
     xMax = parseInt(document.getElementById('end').value);
     if (xMax == 0){
-	if (isRealTime) {
-	    xMax = -1;
-	} else {
-	    for (var i = 0; i < plots.length; i++){
-		xMax = Math.max(d3.max(plots[i].values, function(d){ return d.time; }), xMax);
+	for (var i = 0; i < plots.length; i++){
+	    xMax = Math.max(d3.max(plots[i].values, function(d){ return d.time; }), xMax);
+	}
+	if (isRealTime){
+	    if (xMax > (Date.now() - realTimeStartTime)){
+		realTimeStartTime = Date.now() - xMax;
 	    }
+	    xMax = Date.now() - realTimeStartTime;
 	}
     }
     if (xMin < 0) {
 	xMin = xMax + xMin;
     }
     xScale.domain([xMin, xMax]);
+    for (var i = 0; i < plots.length; i++){
+	var myData = plots[i].values.filter(function(d) {return (d.time >= xMin && d.time <= xMax);});
+	plots[i].yScale.domain(d3.extent(myData, function(d) { return d.value; }));
+	if (isRealTime){
+	    var svg = plots[i].plot.transition().ease('linear').duration(realTimeUpdateFrequency);
+	    svg.select('.line')
+		.attr('d', plots[i].line)
+		.attr("transform", null);
+	    svg.select('.xaxis').call(plots[i].xAxis);
+	    svg.select('.yaxis').call(plots[i].yAxis);
+	} else {
+	    var svg = plots[i].plot.transition();
+	    svg.select('.line') .duration(transitionDuration).attr('d', plots[i].line);
+	    svg.select('.xaxis').duration(transitionDuration).call(plots[i].xAxis);
+	    svg.select('.yaxis').duration(transitionDuration).call(plots[i].yAxis);
+	}
+    }
 }
 
 var plots = [];
 var padding = {'top': 15, 'right': 30, 'bottom': 20, 'left': 60};
 var createPlot = function(key){
-    var myData, found = false;
-    if (data.hasOwnProperty(key)){
-	myData = data[key];
-    } else {
-	console.log('unknown key for plot');
-	return;
-    }
+    var myData = getDataSet(key);
     width = document.getElementById("plot-div").offsetWidth;
     height = 150;
     // Add the plot to the master list of visible plots
-    plots.push(data[key]);
+    plots.push(myData);
     // Create an individual SVG for the new plot
     myData.plot = d3.select('.plot-div').append('svg')
 	.attr('width', width)
 	.attr('height', height);
+    myData.plot.append('clipPath')
+	.attr('id', 'clipPath')
+	.append('rect')
+	.attr('x', padding.left)
+    	.attr('y', padding.top)
+    	.attr('width', width - padding.left - padding.right)
+    	.attr('height', height - padding.top - padding.bottom);
     myData.yScale = d3.scale.linear()
 	.range([height - padding.bottom, padding.top])
 	.domain(d3.extent(myData.values, function(d) { return d.value; }))
 	.nice();
     myData.xAxis = d3.svg.axis()
 	.orient('bottom')
-	.scale(xScale)
-	.ticks(10);
+	.scale(xScale);
     myData.yAxis = d3.svg.axis()
 	.orient('left')
 	.scale(myData.yScale)
@@ -201,16 +202,71 @@ var createPlot = function(key){
     myData.line = d3.svg.line()
 	.x(function(d) { return xScale(d.time); })
     	.y(function(d) { return myData.yScale(d.value); });
-    myData.plot.append('path')
-    	.attr('class', 'line');
+    myData.plot.selectAll('.line')
+	.data([myData.values])
+	.enter()
+	.append('path')
+	.attr('class', 'line')
+	.attr('clip-path', 'url(#clipPath)');
     myData.plot.append('g')
     	.attr('class', 'yaxis axis')
-        .attr('transform', 'translate('+padding.left+',0)');
+        .attr('transform', 'translate('+padding.left+',0)')
+    	.call(myData.yAxis);
     myData.plot.append('g')
     	.attr('class', 'xaxis axis')
-    	.attr('transform', 'translate(0,'+ (height - padding.bottom) +')');
+    	.attr('transform', 'translate(0,'+ (height - padding.bottom) +')')
+	.call(myData.xAxis);
+    var focus = myData.plot.append("g")
+	.attr("class", "focus")
+	.style("display", "none");
+    focus.append("circle")
+	.attr("r", 4.5);
+    focus.append("text")
+	.attr("x", 9)
+	.attr("dy", ".35em");
+    myData.plot.append('rect')
+	.attr("class", "overlay")
+	.attr("width", width)
+	.attr("height", height)
+	.on("mouseover", function() {
+	    if (!isScrolling()) {
+		focus.style("display", null);
+	    }
+	})
+	.on("mouseout" , function() {
+	    if (!isScrolling()){
+		focus.style("display", "none");
+	    }
+	    updateTable();
+	})
+	.on("mousemove", function() {
+	    if (isScrolling()) {return;}
+	    var x0 = xScale.invert(d3.mouse(this)[0]),
+		i = d3.bisector(function(d){ return d.time; }).left(myData.values, x0, 1),
+		d0 = myData.values[i - 1],
+		d1 = myData.values[i],
+		d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+	    updateTable(x0);
+	    focus.attr("transform", "translate(" + xScale(d.time) + "," +
+		       myData.yScale(d.value) + ")");
+	    focus.select("text").text(d.value);
+	});
     updatePlots();
 
+}
+
+function getDataSet(key){
+    for (var i = 0; i < data.length; i++){
+	if (data[i].key == key){
+	    return data[i];
+	}
+    }
+    console.log('unknown key for plot');
+    return;
+}
+
+function removePlot(key){
+    getDataSet(key).plot.remove();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

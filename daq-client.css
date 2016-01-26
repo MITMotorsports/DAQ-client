@@ -37,3 +37,12 @@ html, body {
     stroke: steelblue;
     stroke-width: 1px;
 }
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: none;
+  stroke: steelblue;
+}
