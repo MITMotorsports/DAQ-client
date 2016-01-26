@@ -109,17 +109,16 @@ function updateTable(time){
     		var mindiff = 1000000000;
     		for (j=0; j<vals.length; j++) {
     			var diff = vals[j].time-time;
-    			console.log(diff)
     			if (Math.abs(diff) < mindiff) {
     				mindiff = Math.abs(diff);
     				var closest = j;
-    				console.log(closest)
     			}
     		}
     		var displayval = vals[j].value;
     	}
-    	tableData.push([data[i].name, displayval, data[i].units]);
+    	tableData.push([data[i].name, displayval.toFixed(2), data[i].units]);
     }
+    tableData.sort();
     createTable(tableData);
 }
 
