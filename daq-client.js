@@ -46,6 +46,23 @@ var data = [
     }
 ];
 
+function alphabetize(data) {
+	var names = [];
+	for (i=0; i<data.length; i++) {
+		names.push(data[i].name)
+	}
+	names.sort()
+	var newdata = []
+	for (j=0; j<names.length; j++) {
+		for (k=0; k<data.length; k++) {
+			if (data[k].name === names[j]) {
+				newdata.push(data[k])
+			}
+		}
+	}
+	return newdata
+}
+
 var listOfRandomMeasurements = ['thr', 'brk', 'tem'];
 var makeRandom = function(){
     if (!isRealTime) {goRealTime();}
@@ -79,6 +96,7 @@ function isScrolling(){
 
 var svg, table, rows, width, height;
 function init(){
+	data = alphabetize(data);
     var width = document.getElementById("plot-div").offsetWidth;
     xScale = d3.scale.linear()
 	.range([padding.left, width - padding.right])
@@ -118,7 +136,6 @@ function updateTable(time){
     	}
     	tableData.push([data[i].name, displayval.toFixed(2), data[i].units]);
     }
-    tableData.sort();
     createTable(tableData);
 }
 
